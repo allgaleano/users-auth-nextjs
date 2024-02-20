@@ -13,8 +13,17 @@ import {
   FormMessage 
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useState } from "react";
+import { FormError } from "@/components/form-errorr";
+import { FormSuccess } from "@/components/form-success";
+import axios from "axios";
 
 export const RegisterForm = () => {
+
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+
   const form = useForm<z.infer<typeof RegisterSchema>>({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
@@ -24,10 +33,27 @@ export const RegisterForm = () => {
     }
   })
 
-  function onSubmit(values: z.infer<typeof RegisterSchema>) {
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof RegisterSchema>) => {
+    setError("");
+    setSuccess(""); 
+    try {
+      setLoading(true);
+      const response = await axios.post("/api/auth/register", values);
+      if (response.data.error) {
+        setError(response.data.error);
+      } else if (response.data.success) {
+        setSuccess(response.data.success);
+      }
+      setLoading(false);
+    } catch (error) {
+      setLoading(false);
+      setError("Something went wrong.");
+      console.error(error);
+    }
+
     form.reset();
-  }
+  };
+
   return (
     <CardWrapper
       headerTitle="Register"
@@ -45,6 +71,7 @@ export const RegisterForm = () => {
                 <FormControl>
                   <Input 
                     {...field}
+                    disabled={loading}
                     type="name"
                     autoComplete="name"
                     placeholder="Your Name"
@@ -62,6 +89,7 @@ export const RegisterForm = () => {
                 <FormControl>
                   <Input 
                     {...field}
+                    disabled={loading}
                     type="email"
                     autoComplete="email"
                     placeholder="email@example.com"
@@ -79,6 +107,7 @@ export const RegisterForm = () => {
                 <FormControl>
                   <Input 
                     {...field}
+                    disabled={loading}
                     type="password"
                     placeholder="********"
                   />
@@ -87,6 +116,8 @@ export const RegisterForm = () => {
               </FormItem>
             )}
           />
+          <FormError message={error} />
+          <FormSuccess message={success} />
           <Button 
             type="submit"
             className="w-full"
